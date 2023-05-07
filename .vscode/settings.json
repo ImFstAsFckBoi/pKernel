@@ -1,0 +1,31 @@
+{
+    "cSpell.words": [
+        "QWORD"
+    ],
+    "files.associations": {
+        "*.txt": "txt",
+        "*.asm": "asm-collection",
+        "CMakeLists.txt": "cmake",
+        "*.tpp": "cpp",
+        "*.tcc": "cpp",
+        "*.yml": "ansible",
+        "stddef.h": "c",
+        "optional": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "array": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "variant": "c",
+        "stdio.h": "c",
+        "pkernel.h": "c",
+        "string.h": "c",
+        "stdbool.h": "c",
+        "assert.h": "c",
+        "sema.h": "c",
+        "utils.h": "c",
+        "debug.h": "c"
+    }
+}
