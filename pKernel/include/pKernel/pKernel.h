@@ -42,7 +42,7 @@ typedef struct cpu_state_t
     register32 EFLAGS;
 } cpu_state_t;
 
-typedef struct pk_sema pk_sema;
+typedef struct sema sema;
 
 typedef struct pcb_t
 {
@@ -52,7 +52,7 @@ typedef struct pcb_t
     BYTE *stack;
     proc_stat status;
     int exit_code;
-    pk_sema done_signal;
+    sema done_signal;
     pk_list subprocesses;
 } pcb_t;
 

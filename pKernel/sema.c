@@ -4,18 +4,19 @@
 
 extern pKernel kernel;
 
-void sema_init(pk_sema *sema, int count)
+void sema_init(sema *sema, int count)
 {
     sema->count = count;
     list_init(&sema->waiting);
 }
 
-void sema_destroy(pk_sema *sema)
+void sema_destroy(sema *sema)
 {
+    pk_assert(!sema->waiting.size, "Attempting to destroy a semaphore still being waited for.");
     list_destroy(&sema->waiting);
 }
 
-void sema_up(pk_sema *sema)
+void sema_up(sema *sema)
 {
     ++sema->count;
 
@@ -27,7 +28,7 @@ void sema_up(pk_sema *sema)
     }
 }
 
-void sema_up_no_yield(pk_sema *sema)
+void sema_up_no_yield(sema *sema)
 {
     ++sema->count;
 
@@ -38,7 +39,7 @@ void sema_up_no_yield(pk_sema *sema)
     }
 }
 
-void sema_down(pk_sema *sema)
+void sema_down(sema *sema)
 {
     if (sema->count == 0)
     {

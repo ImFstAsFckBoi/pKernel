@@ -10,19 +10,19 @@ extern "C" {
 
 typedef struct pcb_t pcb_t;
 
-typedef struct pk_sema
+typedef struct sema
 {
     int count;
     pk_list waiting;
-} pk_sema;
+} sema;
 
-void sema_init(pk_sema *sema, int count);
+void sema_init(sema *sema, int count);
 
-void sema_destroy(pk_sema *sema);
+void sema_destroy(sema *sema);
 
-void sema_up(pk_sema *sema);
+void sema_up(sema *sema);
 
-void sema_down(pk_sema *sema);
+void sema_down(sema *sema);
 
 #ifdef __cplusplus
 }
