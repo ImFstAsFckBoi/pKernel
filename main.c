@@ -4,10 +4,9 @@
 
 #include "pKernel/pKernel.h"
 #include "pKernel/debug.h"
-#include "pKernel/sema.h"
+#include "pKernel/sync.h"
 #include "pKernel/list.h"
 
-pk_sema sema;
 
 int sub_test1(int argc, char **argv)
 {
@@ -59,8 +58,6 @@ int test1()
 
 int main()
 {
-    sema_init(&sema, 0);
-
     pk_init(NULL);
 
     arg_t arg = {0, NULL};
@@ -68,6 +65,5 @@ int main()
 
     pk_run();
 
-    sema_destroy(&sema);
     return 0;
 }
