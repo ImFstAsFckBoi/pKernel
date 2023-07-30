@@ -1,6 +1,15 @@
 {
     "cSpell.words": [
-        "QWORD"
+        "COBJFLAGS",
+        "drvr",
+        "libcontext",
+        "libp",
+        "libpk",
+        "OBJS",
+        "QWORD",
+        "Raynal",
+        "rwlock",
+        "sema"
     ],
     "files.associations": {
         "*.txt": "txt",
@@ -26,6 +35,10 @@
         "assert.h": "c",
         "sema.h": "c",
         "utils.h": "c",
-        "debug.h": "c"
+        "debug.h": "c",
+        "format": "cpp",
+        "chrono": "c",
+        "typeinfo": "c",
+        "list.h": "c"
     }
 }

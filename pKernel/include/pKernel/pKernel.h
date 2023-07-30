@@ -4,6 +4,7 @@
 #include "types.h"
 #include "sema.h"
 #include "list.h"
+#include "context.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,49 +13,7 @@ extern "C" {
 #define STACK_SIZE 2048
 #define KERNEL_STACK_SIZE 128
 
-
-
-typedef union register32
-{
-    DWORD b32;
-    WORD b16;
-    BYTE HL[2];
-} register32;
-
-typedef enum proc_stat
-{
-    NEW,
-    RUNNING,
-    DONE,
-    WAITING,
-} proc_stat;
-
-typedef struct cpu_state_t
-{
-    register32 AX; register32 CX; register32 DX;
-
-    register32 BX; register32 SP; register32 BP;
-    register32 SI; register32 DI; register32 IP;
-
-    register32 SS; register32 CS; register32 DS;
-    register32 ES; register32 FS; register32 GS;
-
-    register32 EFLAGS;
-} cpu_state_t;
-
 typedef struct sema sema;
-
-typedef struct pcb_t
-{
-    char *name;
-    cpu_state_t cpu_state;
-
-    BYTE *stack;
-    proc_stat status;
-    int exit_code;
-    sema done_signal;
-    pk_list subprocesses;
-} pcb_t;
 
 typedef struct pKernel
 {
@@ -64,12 +23,7 @@ typedef struct pKernel
     pcb_t *(*scheduler)();
 } pKernel;
 
-/**
- * @brief Change the CPU context proc.
- * 
- * @param proc The process to set context to.
- */
-void pk_ctx_switch(pcb_t *proc);
+
 /**
  * @brief Push N bytes to the stack of proc.
  * 
@@ -149,15 +103,6 @@ void pk_run(void);
  * @param func Function to jump to when done.
  * @param argc argc to be passed to func.
  * @param argv argv to be passed to func.
- */
-NO_RET void pk_process_loader(proc_func_t func, int argc, char **argv);
-/**
- * @brief Default scheduler. A scheduler should:
- *  (1) Only return kernel process once all processes are DONE.
- *  (2) Cycle through all processes in some order.
- *  (3) Not return a process with status DONE or WAITING.
- * 
- * @return pcb_t* The next process to obe scheduled
  */
 pcb_t *pk_default_next_proc(void);
 /**

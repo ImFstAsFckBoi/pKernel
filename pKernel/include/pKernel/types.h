@@ -20,6 +20,13 @@ typedef unsigned char       BYTE;
 //typedef unsigned long       size_t;
 //typedef int                 bool;
 
+typedef union register32
+{
+    DWORD b32;
+    WORD b16;
+    BYTE HL[2];
+} register32;
+
 typedef int (*proc_func_t)(int argc, char **argv);
 
 //#define true                1;

@@ -1,5 +1,7 @@
 playground/
 refs/
+pKernel_test
+
 # Prerequisites
 *.d
 

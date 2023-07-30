@@ -9,7 +9,7 @@ extern "C" {
 
 
 /**
- * @brief Raynal implementation of readers-writers lock using semaphores according to
+ * @brief Raynal implementation of readers-writer lock using semaphores according to
  * https://en.wikipedia.org/wiki/Readers%E2%80%93writer_lock#Using_two_mutexes
  * 
  */

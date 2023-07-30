@@ -5,11 +5,12 @@ COBJFLAGS   = $(CFLAGS) -c
 AS          = nasm
 ASFLAGS     = -f elf32 -g -F dwarf 
 
-OBJS        = context.o pKernel.o debug.o utils.o list.o sema.o lock.o rwlock.o time.o _time.o
+OBJS        = pKernel.o debug.o utils.o list.o
+LIBS        = libpk_context.a libpk_sync.a libpk_time.a
+SUB_DIRS	= context sync time
 
-
-libpKernel.a: ${OBJS}
-	ar rcs $@ ${OBJS}
+libpKernel.a: ${OBJS} ${LIBS}
+	ar rcsT $@ $^
 
 %.o: %.c
 	${CC} ${CFLAGS} -c $<
@@ -17,7 +18,11 @@ libpKernel.a: ${OBJS}
 %.o: %.asm
 	${AS} ${ASFLAGS} $<
 
+.PHONY: libpk_%.a
+libpk_%.a:
+	+${MAKE} super -j -C $*
+
 .PHONY: clean
 clean:
-	rm -f libpKernel.a *.o
-
+	rm -f *.a *.o
+	for f in ${SUB_DIRS}; do make clean -j -C $$f; done
