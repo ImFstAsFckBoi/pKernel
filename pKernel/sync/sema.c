@@ -44,7 +44,7 @@ void sema_down(sema *sema)
     if (sema->count == 0)
     {
         list_push_back(&sema->waiting, (DWORD)kernel.current);
-        kernel.current->status = WAITING;
+        kernel.current->status = SEMA_WAIT;
         pk_yield();
     }
 

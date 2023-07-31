@@ -5,7 +5,7 @@
 #include "pKernel/debug.h"
 #include "pKernel/sync.h"
 #include "pKernel/list.h"
-
+#include "pKernel/time.h"
 sema s;
 
 int full_sub_test1(int argc, char **argv)
@@ -79,8 +79,7 @@ int deadlock_sub()
 int deadlock_test()
 {
     printf("D: Entering deadlock main\n");
-    arg_t arg = {0, NULL};
-    pk_exec(deadlock_sub, arg);
+    pk_exec(deadlock_sub, NULLARG);
     printf("D: Main tried to lock s1\n");
     sema_down(&s1);
     printf("D: Main locked s1\n");
@@ -91,16 +90,40 @@ int deadlock_test()
     return 0;
 }
 
+int short_time()
+{
+    DWORD start = msecs();
+    printf("Short time start = %ld\n", start);
+    pk_sleep(500);
+    DWORD t = msecs();
+    printf("Short time end = %ld\n", t);
+    printf("Short diff = %ld\n", t - start);
+    return 0;
+}
+
+int time_test()
+{
+    DWORD start = msecs();
+    printf("Long time start = %ld\n", start);
+    pk_exec(short_time, NULLARG);
+    pk_sleep(1000);
+    DWORD t = msecs();
+    printf("Long time end = %ld\n", t);
+    printf("Long diff = %ld\n", t - start);
+    return 0;
+}
+
 int main()
 {
+    time_init(4500);
     sema_init(&s, 1);
     sema_init(&s1, 1);
     sema_init(&s2, 1);
     pk_init(NULL);
 
-    arg_t arg = {0, NULL};
-    pk_add_proc(full_test, "Full test", arg);
-    pk_add_proc(deadlock_test, "Deadlock test", arg);
+    pk_add_proc(full_test, "Full test", NULLARG);
+    pk_add_proc(deadlock_test, "Deadlock test", NULLARG);
+    pk_add_proc(time_test, "Time test", NULLARG);
 
     pk_run();
 

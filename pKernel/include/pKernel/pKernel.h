@@ -10,8 +10,9 @@
 extern "C" {
 #endif
 
-#define STACK_SIZE 2048
-#define KERNEL_STACK_SIZE 128
+#define STACK_SIZE 2048             // Max size of heap allocated stack for processes
+#define KERNEL_STACK_SIZE 128       // Size of "preallocated" kernel stack
+#define NULLARG (arg_t){0, NULL}    // Use if no args wanted
 
 typedef struct sema sema;
 
@@ -34,7 +35,7 @@ typedef struct pKernel
  */
 void *pk_stack_cpy(pcb_t *proc, void *buff, size_t len);
 /**
- * @brief Push a QWORD (8 bytes) ths stack of proc.
+ * @brief Push a QWORD (8 bytes) to the stack of proc.
  * 
  * @param proc Process to use as stack.
  * @param value Value to push.
@@ -42,7 +43,7 @@ void *pk_stack_cpy(pcb_t *proc, void *buff, size_t len);
  */
 QWORD *pk_stack_pushq(pcb_t *proc, QWORD value);
 /**
- * @brief Push a DWORD (4 byte) ths stack of proc.
+ * @brief Push a DWORD (4 byte) to the stack of proc.
  * 
  * @param proc Process to use as stack.
  * @param value Value to push.
@@ -50,7 +51,7 @@ QWORD *pk_stack_pushq(pcb_t *proc, QWORD value);
  */
 DWORD *pk_stack_pushl(pcb_t *proc, DWORD value);
 /**
- * @brief Push a WORD (2 byte) ths stack of proc.
+ * @brief Push a WORD (2 byte) to the stack of proc.
  * 
  * @param proc Process to use as stack.
  * @param value Value to push.
@@ -58,7 +59,7 @@ DWORD *pk_stack_pushl(pcb_t *proc, DWORD value);
  */
 WORD *pk_stack_pushw (pcb_t *proc, WORD  value);
 /**
- * @brief Push a BYTE ths stack of proc.
+ * @brief Push a BYTE to the stack of proc.
  * 
  * @param proc Process to use as stack.
  * @param value Value to push.
@@ -81,11 +82,20 @@ void pk_init(pcb_t *(*scheduler)(void));
  */
 void pk_yield(void);
 /**
- * @brief Register a new process to be run.
+ * @brief Wait atleast msec milliseconds until continuing.
+ * No guarantee that that it won't wait longer as running
+ * process would need to yield. This is a form of busy wait.
  * 
+ * @param msec Milliseconds to wait before allowing process to continue.
+ */
+void pk_sleep(DWORD msec);
+/**
+ * @brief Register a new process to be run.
+ *
  * @param entry_func Function to use as main for the process.
  * @param name Optional name of the function.
  * @param args Arguments (argc and argv) to be passed to the main function.
+ * If you dont want any args you can pass `NULLARG`, same as `(arg_t){0, NULL}`
  * @return pcb_t* Pointer to newly created process.
  */
 pcb_t *pk_add_proc(proc_func_t entry_func, char *name, arg_t args);

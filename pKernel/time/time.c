@@ -25,3 +25,10 @@ DWORD secs(void)
     QWORD ts = timestamp();
     return (ts / CPU_CLK_SCALE) / 1000000;
 }
+
+void busy_sleep(DWORD msec)
+{
+    DWORD start = msecs();
+    while (msecs() < start + msec)
+        ;
+}

@@ -27,7 +27,8 @@ typedef enum proc_stat
     NEW,
     RUNNING,
     DONE,
-    WAITING,
+    SEMA_WAIT,
+    TIME_WAIT
 } proc_stat;
 
 
@@ -41,8 +42,8 @@ typedef struct pcb_t
     int exit_code;
     sema done_signal;
     pk_list subprocesses;
+    DWORD wakeup_time;
 } pcb_t;
-
 
 /**
  * @brief Change the CPU context proc.

@@ -37,6 +37,11 @@ DWORD msecs(void);
  * @return DWORD Seconds the CPU has been running.
  */
 DWORD secs(void);
+/**
+ * @brief Busy wait the CPU for msec amount of time.
+ * 
+ */
+void busy_sleep(DWORD msec);
 
 #ifdef __cplusplus
 }

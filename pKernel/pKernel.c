@@ -1,6 +1,8 @@
 #include "pKernel.h"
 #include "debug.h"
 #include "context.h"
+#include "time.h"
+#include "utils.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,6 +14,14 @@ pKernel kernel;
 void pk_yield(void)
 {
     pk_ctx_switch(kernel.scheduler());
+}
+
+void pk_sleep(DWORD msec)
+{
+    kernel.current->wakeup_time = msecs() + msec;
+    kernel.current->status = TIME_WAIT;
+    pk_yield();
+    kernel.current->status = RUNNING;
 }
 
 pcb_t *pk_add_proc(proc_func_t entry_func, char *name, arg_t args)
@@ -114,32 +124,74 @@ void pk_run(void)
 
 pcb_t *pk_default_next_proc(void)
 {
+    pcb_t *output;
+    size_t sz = kernel.plist.size;
     if (kernel.current == &kernel.main_proc)
-        return (pcb_t *) list_pop_front(&kernel.plist);
+        return (pcb_t *) list_at(&kernel.plist, 0);
 
     size_t offset = list_find(&kernel.plist, (DWORD) kernel.current);
 
-    if (offset + 1 == kernel.plist.size)
-        offset = 0;
-    else
-        ++offset;
+    size_t maybe_idx = 0;
+    pcb_t **maybes = malloc(sizeof(pcb_t *) * sz);
+    memset(maybes, (int) NULL, sizeof(pcb_t *) * sz);
 
-    bool flag = false;
-    while (((pcb_t *) list_at(&kernel.plist, offset))->status == DONE ||
-           ((pcb_t *) list_at(&kernel.plist, offset))->status == WAITING)
+    for (size_t i = (offset + 1) % sz; i != offset; i = ((i + 1) % sz))
     {
-        ++offset;
-        if (offset == kernel.plist.size)
+        pcb_t *p = (pcb_t *)list_at(&kernel.plist, i);
+        switch (p->status)
         {
-            if (flag)
-                return &kernel.main_proc;
-
-            offset = 0;
-            flag = true;
+        case DONE:
+        case SEMA_WAIT:
+            break;
+        case NEW:
+        case RUNNING:
+            output = p;
+            goto ret;
+        case TIME_WAIT:
+            maybes[maybe_idx++] = p;
+        default:
+            break;
         }
     }
 
-    return (pcb_t *) list_at(&kernel.plist, offset);
+    pcb_t *wait_for = NULL;
+    size_t wakeup = __INT32_MAX__;
+    for (size_t i = 0; i < sz; ++i)
+    {
+        pcb_t *p = maybes[i];
+        if (p != NULL)
+        {
+            switch (p->status)
+            {
+            case TIME_WAIT:
+                if (p->wakeup_time < wakeup)
+                {
+                    wait_for = p;
+                    wakeup = p->wakeup_time;
+                }
+                break;
+
+            default:
+                pk_assert(false, "Unreachable case in switch");
+                break;
+            }
+        }
+    }
+
+    if (wait_for != NULL)
+    {
+        printf("Waiting for sleeping process\n");
+        if (wakeup > msecs())
+            busy_sleep(wakeup - msecs());
+
+        output = wait_for;
+        goto ret;
+    }
+
+    return &kernel.main_proc;
+ret:
+    free(maybes);
+    return output;
 }
 
 void pk_cleanup(void)

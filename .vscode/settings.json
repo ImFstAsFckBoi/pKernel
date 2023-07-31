@@ -5,6 +5,7 @@
         "libcontext",
         "libp",
         "libpk",
+        "NULLARG",
         "OBJS",
         "QWORD",
         "Raynal",
@@ -39,6 +40,7 @@
         "format": "cpp",
         "chrono": "c",
         "typeinfo": "c",
-        "list.h": "c"
+        "list.h": "c",
+        "complex": "c"
     }
 }
