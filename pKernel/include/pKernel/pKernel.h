@@ -12,7 +12,6 @@ extern "C" {
 
 #define STACK_SIZE 2048             // Max size of heap allocated stack for processes
 #define KERNEL_STACK_SIZE 128       // Size of "preallocated" kernel stack
-#define NULLARG (arg_t){0, NULL}    // Use if no args wanted
 
 typedef struct sema sema;
 
@@ -77,27 +76,14 @@ BYTE *pk_stack_push (pcb_t *proc, BYTE  value);
  */
 void pk_init(pcb_t *(*scheduler)(void));
 /**
- * @brief Relinquish the CPU schedule the next proccess.
+ * @brief Default scheduler. A scheduler should:
+ *  (1) Only return kernel process once all processes are DONE or SEMA_WAIT.
+ *  (2) Cycle through all processes in some order.
+ *  (3) Not return a process with status DONE or TIME_WAIT.
  * 
+ * @return pcb_t* The next process to obe scheduled.
  */
-void pk_yield(void);
-/**
- * @brief Wait atleast msec milliseconds until continuing.
- * No guarantee that that it won't wait longer as running
- * process would need to yield. This is a form of busy wait.
- * 
- * @param msec Milliseconds to wait before allowing process to continue.
- */
-void pk_sleep(DWORD msec);
-/**
- * @brief Register a new process to be run.
- *
- * @param entry_func Function to use as main for the process.
- * @param name Optional name of the function.
- * @param args Arguments (argc and argv) to be passed to the main function.
- * If you dont want any args you can pass `NULLARG`, same as `(arg_t){0, NULL}`
- * @return pcb_t* Pointer to newly created process.
- */
+
 pcb_t *pk_add_proc(proc_func_t entry_func, char *name, arg_t args);
 /**
  * @brief Start the kernel and run until a crash or all processes finish.
@@ -126,25 +112,6 @@ void pk_cleanup(void);
  *
  */
 NO_RET void pk_exit_handler(void);
-/**
- * @brief Lets a proccess add a subprocess to be executed.
- * 
- * @param entry_func Entry (or main) function of the subprocess.
- * @param args Arguments to be passed.
- * @return pid_t An ID which can be used to identify the subprocess when calling pk_wait().
- */
-pid_t pk_exec(proc_func_t entry_func, arg_t args);
-/**
- * @brief Wait for a subprocess to finish executing and get its exit code.
- * 
- * @param pid ID of the subprocess to wait for.
- * @return int The exit code of the subprocess.
- */
-int pk_wait(pid_t pid);
-
-
-
-void pk_fire(void);
 
 #ifdef __cplusplus
 }

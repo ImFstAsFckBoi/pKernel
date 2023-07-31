@@ -11,18 +11,6 @@
 
 pKernel kernel;
 
-void pk_yield(void)
-{
-    pk_ctx_switch(kernel.scheduler());
-}
-
-void pk_sleep(DWORD msec)
-{
-    kernel.current->wakeup_time = msecs() + msec;
-    kernel.current->status = TIME_WAIT;
-    pk_yield();
-    kernel.current->status = RUNNING;
-}
 
 pcb_t *pk_add_proc(proc_func_t entry_func, char *name, arg_t args)
 {
@@ -56,10 +44,11 @@ pcb_t *pk_add_proc(proc_func_t entry_func, char *name, arg_t args)
 
     p->cpu_state.IP.b32 = (DWORD) pk_process_loader;
     p->status = NEW;
-    sema_init(&p->done_signal, 0);
+    sema_init(&p->com_info.done_signal, 0);
     list_init(&p->subprocesses);
     list_push_back(&kernel.plist, (DWORD)p);
-
+    p->time_info.deadline = __deadline_default;
+    p->time_info.wakeup_time = 0;
     return p;
 }
 
@@ -164,10 +153,10 @@ pcb_t *pk_default_next_proc(void)
             switch (p->status)
             {
             case TIME_WAIT:
-                if (p->wakeup_time < wakeup)
+                if (p->time_info.wakeup_time < wakeup)
                 {
                     wait_for = p;
-                    wakeup = p->wakeup_time;
+                    wakeup = p->time_info.wakeup_time;
                 }
                 break;
 
@@ -180,9 +169,8 @@ pcb_t *pk_default_next_proc(void)
 
     if (wait_for != NULL)
     {
-        printf("Waiting for sleeping process\n");
-        if (wakeup > msecs())
-            busy_sleep(wakeup - msecs());
+        if (wakeup > time_msecs())
+            busy_sleep(wakeup - time_msecs());
 
         output = wait_for;
         goto ret;
@@ -209,23 +197,24 @@ void pk_cleanup(void)
         }
     }
 
-    printf("Kernel exited with process");
-    for (size_t i = 0; i < list.size-1; ++i)
-    {
-        printf(" \"%s\"", (char *)list_at(&list, i));
-    }
-    printf(" and \"%s\" unfinished.\n", (char *)list_at(&list, list.size-1));
+    //TODO: Debug
+    //printf("Kernel exited with process");
+    //for (size_t i = 0; i < list.size-1; ++i)
+    //{
+    //    printf(" \"%s\"", (char *)list_at(&list, i));
+    //}
+    //printf(" and \"%s\" unfinished.\n", (char *)list_at(&list, list.size-1));
 
-    if (list.size > 1)
-    {
-        printf("This is likely caused to a deadlock.\n");
-    }
+    //if (list.size > 1)
+    //{
+    //    printf("This is likely caused to a deadlock.\n");
+    //}
 
     for (size_t i = 0; i < kernel.plist.size; ++i)
     {
         register pcb_t *p = ((pcb_t *)list_at(&kernel.plist, i));
 
-        sema_destroy(&p->done_signal);
+        sema_destroy(&p->com_info.done_signal);
         list_destroy(&p->subprocesses);
         free(p->stack - STACK_SIZE);
         free(p);
@@ -240,37 +229,9 @@ NO_RET void pk_exit_handler(void)
     asm("movl %%EAX, %0" : "=r"(ret) : : "eax");
     pcb_t *p = kernel.current;
     printf("%s: %d\n", p->name, ret);
-    p->exit_code = ret;
+    p->com_info.exit_code = ret;
     p->status = DONE;
-    sema_up(&p->done_signal);
+    sema_up(&p->com_info.done_signal);
     pk_ctx_switch(kernel.scheduler());
     __builtin_unreachable();
-}
-
-pid_t pk_exec(proc_func_t entry_func, arg_t  args)
-{
-    char *parent_name = kernel.current->name;
-    register size_t pn_len = strlen(parent_name);
-
-    char *sub_name = malloc(pn_len + 14);
-    memcpy(sub_name, parent_name, pn_len);
-    memcpy(sub_name + pn_len, " - Subprocess", 14);
-
-    pcb_t *p = pk_add_proc(entry_func, sub_name, args);
-    register pk_list *sublist = &kernel.current->subprocesses;
-    list_push_back(sublist, (DWORD)p);
-    free(sub_name);
-    return sublist->size - 1;
-}
-
-int pk_wait(pid_t pid)
-{
-    if (pid < 0)
-        return -1;
-
-    pcb_t *p = ((pcb_t *)list_at(&kernel.current->subprocesses, pid));
-    sema_down(&p->done_signal);
-    int tmp = p->exit_code;
-    sema_up(&p->done_signal);
-    return tmp;
 }

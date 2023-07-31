@@ -7,28 +7,28 @@ void time_init(size_t cpu_clk_mhz)
     CPU_CLK_SCALE = cpu_clk_mhz;
 }
 
-DWORD usecs(void)
+usecs_t time_usecs(void)
 {
     QWORD ts = timestamp();
     return ts / CPU_CLK_SCALE;
 }
 
-DWORD msecs(void)
+msecs_t time_msecs(void)
 {
     QWORD ts = timestamp();
     return (ts / CPU_CLK_SCALE) / 1000;
 }
 
-DWORD secs(void)
+secs_t time_secs(void)
 {
     
     QWORD ts = timestamp();
     return (ts / CPU_CLK_SCALE) / 1000000;
 }
 
-void busy_sleep(DWORD msec)
+void busy_sleep(msecs_t msec)
 {
-    DWORD start = msecs();
-    while (msecs() < start + msec)
+    msecs_t start = time_msecs();
+    while (time_msecs() < start + msec)
         ;
 }

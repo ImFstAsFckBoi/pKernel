@@ -9,6 +9,7 @@
         "OBJS",
         "QWORD",
         "Raynal",
+        "rdtsc",
         "rwlock",
         "sema"
     ],
@@ -41,6 +42,9 @@
         "chrono": "c",
         "typeinfo": "c",
         "list.h": "c",
-        "complex": "c"
+        "complex": "c",
+        "sync.h": "c",
+        "time.h": "c",
+        "syscall.h": "c"
     }
 }

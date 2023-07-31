@@ -7,6 +7,10 @@
 extern "C" {
 #endif
 
+typedef DWORD usecs_t;
+typedef DWORD msecs_t;
+typedef DWORD  secs_t;
+
 /**
  * @brief Initialize time module. Must be run before
  * any other time function to not get incorrect values.
@@ -15,7 +19,7 @@ extern "C" {
  */
 void time_init(size_t cpu_clk_mhz);
 /**
- * @brief Get the x86 Time Stamp Counter.
+ * @brief Get the x86 Time Stamp Counter. (rdtsc)
  * 
  */
 QWORD timestamp(void);
@@ -24,24 +28,24 @@ QWORD timestamp(void);
  * 
  * @return DWORD Microseconds the CPU has been running.
  */
-DWORD usecs(void);
+usecs_t time_usecs(void);
 /**
  * @brief Approximate the CPU running time in milliseconds.
  * 
  * @return DWORD Milliseconds the CPU has been running.
  */
-DWORD msecs(void);
+msecs_t time_msecs(void);
 /**
  * @brief Approximate the CPU running time in seconds.
  * 
  * @return DWORD Seconds the CPU has been running.
  */
-DWORD secs(void);
+secs_t time_secs(void);
 /**
  * @brief Busy wait the CPU for msec amount of time.
  * 
  */
-void busy_sleep(DWORD msec);
+void busy_sleep(msecs_t msec);
 
 #ifdef __cplusplus
 }

@@ -1,11 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "pKernel/syscall.h"
 #include "pKernel/pKernel.h"
-#include "pKernel/debug.h"
 #include "pKernel/sync.h"
-#include "pKernel/list.h"
 #include "pKernel/time.h"
+
+
 sema s;
 
 int full_sub_test1(int argc, char **argv)
@@ -92,24 +93,32 @@ int deadlock_test()
 
 int short_time()
 {
-    DWORD start = msecs();
+    msecs_t start = time_msecs();
+    pk_deadline_set(1000);
     printf("Short time start = %ld\n", start);
     pk_sleep(500);
-    DWORD t = msecs();
+    msecs_t t = time_msecs();
     printf("Short time end = %ld\n", t);
     printf("Short diff = %ld\n", t - start);
+    int d = pk_deadline_meet();
+    printf("Did short meet deadline?: %d\n", d);
     return 0;
 }
 
 int time_test()
 {
-    DWORD start = msecs();
+    pk_deadline_set(500);
+
+    msecs_t start = time_msecs();
     printf("Long time start = %ld\n", start);
     pk_exec(short_time, NULLARG);
     pk_sleep(1000);
-    DWORD t = msecs();
+    msecs_t t = time_msecs();
     printf("Long time end = %ld\n", t);
     printf("Long diff = %ld\n", t - start);
+    int d = pk_deadline_meet();
+    printf("Did long meet deadline?: %d\n", d);
+
     return 0;
 }
 

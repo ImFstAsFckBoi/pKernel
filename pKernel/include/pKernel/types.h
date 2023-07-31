@@ -48,6 +48,8 @@ typedef struct arg_t
     char **argv;
 } arg_t;
 
+#define NULLARG (arg_t){0, NULL}    // Use if no args wanted
+
 #ifdef __cplusplus
 }
 #endif

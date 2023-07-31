@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "sema.h"
 #include "pKernel.h"
+#include "syscall.h"
 
 extern pKernel kernel;
 

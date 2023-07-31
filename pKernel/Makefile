@@ -5,7 +5,7 @@ COBJFLAGS   = $(CFLAGS) -c
 AS          = nasm
 ASFLAGS     = -f elf32 -g -F dwarf 
 
-OBJS        = pKernel.o debug.o utils.o list.o
+OBJS        = pKernel.o debug.o utils.o list.o syscall.o
 LIBS        = libpk_context.a libpk_sync.a libpk_time.a
 SUB_DIRS	= context sync time
 
