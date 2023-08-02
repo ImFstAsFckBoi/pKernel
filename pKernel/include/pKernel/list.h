@@ -38,6 +38,8 @@ size_t list_find(pk_list *l, DWORD value);
 
 void list_print(pk_list *l);
 
+void list_ncopy(pk_list *l, void *dest, size_t n);
+
 #ifdef __cplusplus
 }
 #endif

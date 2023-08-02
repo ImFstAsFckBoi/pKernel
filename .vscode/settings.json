@@ -5,6 +5,7 @@
         "libcontext",
         "libp",
         "libpk",
+        "ncopy",
         "NULLARG",
         "OBJS",
         "QWORD",
@@ -45,6 +46,9 @@
         "complex": "c",
         "sync.h": "c",
         "time.h": "c",
-        "syscall.h": "c"
+        "syscall.h": "c",
+        "math.h": "c",
+        "stdlib.h": "c",
+        "types.h": "c"
     }
 }

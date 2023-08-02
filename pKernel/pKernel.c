@@ -117,12 +117,44 @@ pcb_t *pk_default_next_proc(void)
     size_t sz = kernel.plist.size;
     if (kernel.current == &kernel.main_proc)
         return (pcb_t *) list_at(&kernel.plist, 0);
+    
+    
 
     size_t offset = list_find(&kernel.plist, (DWORD) kernel.current);
+    
+
 
     size_t maybe_idx = 0;
+    pcb_t **ordered = malloc(sizeof(pcb_t *) * sz);
+    list_ncopy(&kernel.plist, ordered, sz);
+
+
+    for (size_t i = 0; i < sz - 1; ++i)
+    for (size_t j = 0; j < sz - i - 1; ++j)   
+    if (ordered[j]->time_info.deadline > ordered[j + 1]->time_info.deadline)
+        swap(ordered+j, ordered+j+1);
+
     pcb_t **maybes = malloc(sizeof(pcb_t *) * sz);
     memset(maybes, (int) NULL, sizeof(pcb_t *) * sz);
+    
+    if (kernel.plist.size == 1)
+    {
+        switch (kernel.current->status)
+        {
+        case DONE:
+        case SEMA_WAIT:
+            output = &kernel.main_proc;
+            goto ret;
+        case NEW:
+        case RUNNING:
+            output = kernel.current;
+            goto ret;
+        case TIME_WAIT:
+            maybes[maybe_idx++] = kernel.current;
+        default:
+            break;
+        }
+    }
 
     for (size_t i = (offset + 1) % sz; i != offset; i = ((i + 1) % sz))
     {
@@ -179,6 +211,7 @@ pcb_t *pk_default_next_proc(void)
     return &kernel.main_proc;
 ret:
     free(maybes);
+    free(ordered);
     return output;
 }
 

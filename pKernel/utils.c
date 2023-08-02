@@ -23,3 +23,13 @@ void pk_assert(bool cond, char *msg)
 
     pk_ctx_switch(&kernel.main_proc);
 }
+
+void swap(void *a, void *b)
+{
+    //X := X XOR Y; // XOR the values and store the result in X
+    //Y := Y XOR X; // XOR the values and store the result in Y
+    //X := X XOR Y; // XOR the values and store the result in X
+    DWORD tmp = *(DWORD *)a;
+    *(DWORD *)a = *(DWORD *)b;
+    *(DWORD *)b = tmp;
+}

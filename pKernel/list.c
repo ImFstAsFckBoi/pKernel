@@ -97,3 +97,13 @@ void list_print(pk_list *l)
     for (size_t i = 0; i < l->size; ++i)
         printf("%3d: 0x%02lx\n", i, l->data[i]);
 }
+
+void list_ncopy(pk_list *l, void *dest, size_t n)
+{
+    size_t stop = n < l->size ? n : l->size;
+
+    for (size_t i=0; i < stop; ++i)
+    {
+        ((DWORD *)dest)[i] = l->data[i];
+    }
+}

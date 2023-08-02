@@ -11,7 +11,7 @@ void *memcpy_rev(void *dest, void *src, size_t len);
 
 void pk_assert(bool cond, char *msg);
 
-char *pk_itoa(int val, int base);
+void swap(void *a, void *b);
 
 #ifdef __cplusplus
 }

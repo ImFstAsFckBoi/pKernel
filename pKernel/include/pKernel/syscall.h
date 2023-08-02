@@ -8,14 +8,14 @@ extern "C" {
 #include "types.h"
 #include "time.h"
 /**
- * @brief Relinquish the CPU schedule the next proccess.
+ * @brief Relinquish the CPU and schedule the next proccess.
  * 
  */
 void pk_yield(void);
 /**
- * @brief Wait atleast msec milliseconds until continuing.
- * No guarantee that that it won't wait longer as running
- * process would need to yield. This is a form of busy wait.
+ * @brief Wait atleast 'msec' milliseconds before continuing.
+ * No guarantee that it won't wait longer as the running
+ * process would need to yield in time. This is a form of busy wait.
  * 
  * @param msec Milliseconds to wait before allowing process to continue.
  */
@@ -36,16 +36,16 @@ pid_t pk_exec(proc_func_t entry_func, arg_t args);
  */
 int pk_wait(pid_t pid);
 /**
- * @brief 
+ * @brief Set a deadline for 'msecs' milliseconds in the future.
  * 
- * @param msecs 
- * @return int 
+ * @param msecs Milliseconds from non the deadline needs to be met by.
+ * @return int 0 = success, 1 = failure
  */
 int pk_deadline_set(msecs_t msec);
 /**
- * @brief 
+ * @brief Meet the deadline previously set by 'pk_deadline_set'
  * 
- * @return int 
+ * @return int 0 = deadline met, 1 = deadline exceeded
  */
 int pk_deadline_meet();
 
