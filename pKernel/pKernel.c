@@ -253,6 +253,7 @@ void pk_cleanup(void)
         free(p);
     }
 
+    list_destroy(&list);
     list_destroy(&kernel.plist);
 }
 
