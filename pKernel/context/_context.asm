@@ -12,33 +12,13 @@ SECTION	.text
     extern pk_exit_handler
     extern printf
     extern fsync
+    extern time_msecs
 
     %define ADDR_WIDTH  4
 
     %define K_CUR_OFF   12
 
-    %define NAME            0
-    %define AX_OFF          4
-    %define CX_OFF          8
-    %define DX_OFF          12
-    %define BX_OFF          16
-    %define SP_OFF          20
-    %define BP_OFF          24
-    %define SI_OFF          28
-    %define DI_OFF          32
-    %define IP_OFF          36
-    %define SS_OFF          40
-    %define CS_OFF          44
-    %define DS_OFF          48
-    %define ES_OFF          52
-    %define FS_OFF          56
-    %define GS_OFF          60
-    %define EFLAGS_OFF      64
-    %define STACK_OFF       68
-    %define STATUS_OFF      72
-    %define PLIST_OFF       76
-    %define COM_INFO_OFF    88
-    %define TIME_INFO_OFF   108
+    %include "pcb_offsets.asm"
 
     %define STATUS_NEW      0
     %define STATUS_RUNNING  1
@@ -72,12 +52,36 @@ SECTION	.text
     ; be saved on stack by yielding proc
 %endmacro
 
+%macro start_cpu_timer 0
+    ; Require ECX = current process
+    pusha
+    push ECX
+    call time_msecs
+    pop ECX
+    mov [ECX + START_TIME_OFF], EAX
+    popa
+%endmacro
+
+%macro end_cpu_timer 0
+    ; Require ECX = current process
+    pusha
+    push ECX
+    call time_msecs
+    pop ECX
+    mov EBX, [ECX + START_TIME_OFF]
+    sub EAX, EBX
+    add [ECX + CPU_TIME_OFF], EAX
+    popa
+%endmacro
+
 pk_ctx_switch:
     push EBP
     mov EBP, ESP
     push ECX
 
     mov ECX, DWORD [kernel + K_CUR_OFF]   ; ECX = kernel.current
+    
+    end_cpu_timer
     
     __pk_store_ctx                  ; Store current process registers
     
@@ -90,6 +94,8 @@ pk_ctx_switch:
     mov ECX, DWORD [kernel + K_CUR_OFF]   ; kernel.current = &process
     __pk_load_ctx
     
+    start_cpu_timer
+
     pop ECX
     mov ESP, EBP    ; pop all local variables
     pop EBP         ; restore EBP reg'
@@ -105,6 +111,8 @@ pk_process_loader:
 
     __pk_load_ctx
     
+    start_cpu_timer
+
     ; Replace func entry function (arg1) with pk_exit_handler address
     ; Will look like return address to entry fucntion
     ; This fucntion has no return address since it will never return
@@ -128,6 +136,7 @@ pk_process_loader:
 
     mov ECX, [ESP]
     mov DWORD [ESP], pk_exit_handler
+
     jmp ECX
 
 

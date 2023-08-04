@@ -16,7 +16,7 @@
     ],
     "files.associations": {
         "*.txt": "txt",
-        "*.asm": "asm-collection",
+        "*.asm": "asm-intel-x86-generic",
         "CMakeLists.txt": "cmake",
         "*.tpp": "cpp",
         "*.tcc": "cpp",

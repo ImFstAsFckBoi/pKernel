@@ -42,6 +42,8 @@ typedef struct time_info_t
 {
     msecs_t wakeup_time;
     msecs_t deadline;
+    msecs_t cpu_time;
+    msecs_t start_time;
 } time_info_t;
 
 #define __deadline_default __INT32_MAX__

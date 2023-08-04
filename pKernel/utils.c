@@ -13,15 +13,21 @@ void *memcpy_rev(void *dest, void *src, size_t len)
     return dest;
 }
 
+void pk_panic(const char *msg)
+{
+    printf("KERNEL PANIC! with message:\n%s\n\nExiting pKernel and continuing main function", msg);
+    pk_ctx_switch(&kernel.main_proc);
+}
+
 void pk_assert(bool cond, char *msg)
 {
     if (cond)
         return;
     
     if (msg != NULL)
-        printf("Assertion failed: %s\n Exiting pKernel and continuing main function\n", msg);
+        printf("Assertion failed: %s\n", msg);
 
-    pk_ctx_switch(&kernel.main_proc);
+    pk_panic("Failed assertion.");
 }
 
 void swap(void *a, void *b)

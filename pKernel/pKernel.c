@@ -3,6 +3,7 @@
 #include "context.h"
 #include "time.h"
 #include "utils.h"
+#include "dbg.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -95,6 +96,7 @@ void pk_init(pcb_t *(*scheduler)(void))
         : "=r"(SP));
 
     list_init(&kernel.plist);
+    kernel.main_proc.time_info.start_time = time_msecs();
     kernel.main_proc.name = "kernel";
     kernel.main_proc.stack = SP + KERNEL_STACK_SIZE;
     kernel.current = &kernel.main_proc;
@@ -113,48 +115,78 @@ void pk_run(void)
 
 pcb_t *pk_default_next_proc(void)
 {
+    long double x = kernel.current->time_info.cpu_time * (kernel.current->time_info.deadline / __deadline_default) *(1);
+    dbg_dump_f();
+
+    #define RETURN(x) output = (x); goto _ret
     pcb_t *output;
     size_t sz = kernel.plist.size;
     if (kernel.current == &kernel.main_proc)
         return (pcb_t *) list_at(&kernel.plist, 0);
-    
-    
-
-    size_t offset = list_find(&kernel.plist, (DWORD) kernel.current);
-    
-
-
-    size_t maybe_idx = 0;
-    pcb_t **ordered = malloc(sizeof(pcb_t *) * sz);
-    list_ncopy(&kernel.plist, ordered, sz);
-
-
-    for (size_t i = 0; i < sz - 1; ++i)
-    for (size_t j = 0; j < sz - i - 1; ++j)   
-    if (ordered[j]->time_info.deadline > ordered[j + 1]->time_info.deadline)
-        swap(ordered+j, ordered+j+1);
-
-    pcb_t **maybes = malloc(sizeof(pcb_t *) * sz);
-    memset(maybes, (int) NULL, sizeof(pcb_t *) * sz);
-    
-    if (kernel.plist.size == 1)
+    else if (sz == 1)
     {
         switch (kernel.current->status)
         {
         case DONE:
         case SEMA_WAIT:
-            output = &kernel.main_proc;
-            goto ret;
+            return &kernel.main_proc;
         case NEW:
         case RUNNING:
-            output = kernel.current;
-            goto ret;
+            return kernel.current;
         case TIME_WAIT:
-            maybes[maybe_idx++] = kernel.current;
+            msecs_t wakeup = kernel.current->time_info.wakeup_time;
+            if (wakeup > time_msecs())
+                busy_sleep(wakeup - time_msecs());
+            return kernel.current;
         default:
-            break;
+            pk_panic("Unhandled process status in scheduler.");
         }
     }
+    size_t offset = list_find(&kernel.plist, (DWORD) kernel.current);
+
+
+    pcb_t **deadline_sorted = malloc(sizeof(pcb_t *) * sz);
+    list_ncopy(&kernel.plist, deadline_sorted, sz);
+
+    size_t maybe_idx = 0;
+    pcb_t **maybes = malloc(sizeof(pcb_t *) * sz);
+    memset(maybes, (int) NULL, sizeof(pcb_t *) * sz);
+
+
+    for (size_t i = 0; i < sz - 1; ++i)
+    for (size_t j = 0; j < sz - i - 1; ++j)
+    if (deadline_sorted[j]->time_info.deadline > deadline_sorted[j + 1]->time_info.deadline)
+        swap(deadline_sorted+j, deadline_sorted+j+1);
+
+    if (deadline_sorted[0]->time_info.deadline != __deadline_default)
+    {
+        // Process with deadline exists
+        for (int i = 0; i<sz; ++i)
+        {
+            pcb_t *p = deadline_sorted[i];
+            if (p->status == __deadline_default)
+                break;
+
+            switch (p->status)
+            {
+            case DONE:
+            case SEMA_WAIT:
+                continue;
+            case NEW:
+            case RUNNING:
+                RETURN(p);
+            case TIME_WAIT:
+                msecs_t wakeup = kernel.current->time_info.wakeup_time;
+                if (wakeup > time_msecs())
+                    busy_sleep(wakeup - time_msecs());
+                return kernel.current;
+            default:
+                pk_panic("Unhandled process status in scheduler.");
+            }
+        }
+    }
+
+   
 
     for (size_t i = (offset + 1) % sz; i != offset; i = ((i + 1) % sz))
     {
@@ -167,7 +199,7 @@ pcb_t *pk_default_next_proc(void)
         case NEW:
         case RUNNING:
             output = p;
-            goto ret;
+            goto _ret;
         case TIME_WAIT:
             maybes[maybe_idx++] = p;
         default:
@@ -205,13 +237,13 @@ pcb_t *pk_default_next_proc(void)
             busy_sleep(wakeup - time_msecs());
 
         output = wait_for;
-        goto ret;
+        goto _ret;
     }
 
     return &kernel.main_proc;
-ret:
+_ret:
     free(maybes);
-    free(ordered);
+    free(deadline_sorted);
     return output;
 }
 

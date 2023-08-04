@@ -9,6 +9,8 @@ extern "C" {
 
 void *memcpy_rev(void *dest, void *src, size_t len);
 
+void pk_panic(const char *msg);
+
 void pk_assert(bool cond, char *msg);
 
 void swap(void *a, void *b);
