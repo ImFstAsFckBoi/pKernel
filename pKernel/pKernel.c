@@ -99,6 +99,7 @@ void pk_init(pcb_t *(*scheduler)(void))
     kernel.main_proc.time_info.start_time = time_msecs();
     kernel.main_proc.name = "kernel";
     kernel.main_proc.stack = SP + KERNEL_STACK_SIZE;
+    kernel.main_proc.time_info.deadline = __deadline_default;
     kernel.current = &kernel.main_proc;
 
     if (scheduler == NULL)
@@ -113,14 +114,31 @@ void pk_run(void)
     pk_cleanup();
 }
 
+double calc_t_score(pcb_t *p)
+{
+    double x = p->time_info.cpu_time * (p->time_info.deadline / __deadline_default) * (1 + (p == kernel.current));
+
+    switch (p->status)
+    {
+    case DONE:
+    case SEMA_WAIT:
+        return T_SCORE_MAX;
+    case TIME_WAIT:
+        x += (int)p->time_info.wakeup_time - (int)time_msecs();
+    case NEW:
+    case RUNNING:
+        break;
+    default:
+        pk_panic("Unhandled process status in scheduler.");
+    }
+
+    return x;
+}
+
 pcb_t *pk_default_next_proc(void)
 {
-    long double x = kernel.current->time_info.cpu_time * (kernel.current->time_info.deadline / __deadline_default) *(1);
-    dbg_dump_f();
-
-    #define RETURN(x) output = (x); goto _ret
-    pcb_t *output;
-    size_t sz = kernel.plist.size;
+    dbg_location;
+    const size_t sz = kernel.plist.size;
     if (kernel.current == &kernel.main_proc)
         return (pcb_t *) list_at(&kernel.plist, 0);
     else if (sz == 1)
@@ -134,117 +152,66 @@ pcb_t *pk_default_next_proc(void)
         case RUNNING:
             return kernel.current;
         case TIME_WAIT:
-            msecs_t wakeup = kernel.current->time_info.wakeup_time;
-            if (wakeup > time_msecs())
-                busy_sleep(wakeup - time_msecs());
+        {
+            if (kernel.current->time_info.wakeup_time > time_msecs())
+                busy_sleep(kernel.current->time_info.wakeup_time - time_msecs());
             return kernel.current;
+        }
         default:
             pk_panic("Unhandled process status in scheduler.");
         }
     }
-    size_t offset = list_find(&kernel.plist, (DWORD) kernel.current);
 
 
-    pcb_t **deadline_sorted = malloc(sizeof(pcb_t *) * sz);
-    list_ncopy(&kernel.plist, deadline_sorted, sz);
+    struct pair {
+        double t_score;
+        pcb_t *p;
+    };
 
-    size_t maybe_idx = 0;
-    pcb_t **maybes = malloc(sizeof(pcb_t *) * sz);
-    memset(maybes, (int) NULL, sizeof(pcb_t *) * sz);
-
-
-    for (size_t i = 0; i < sz - 1; ++i)
-    for (size_t j = 0; j < sz - i - 1; ++j)
-    if (deadline_sorted[j]->time_info.deadline > deadline_sorted[j + 1]->time_info.deadline)
-        swap(deadline_sorted+j, deadline_sorted+j+1);
-
-    if (deadline_sorted[0]->time_info.deadline != __deadline_default)
-    {
-        // Process with deadline exists
-        for (int i = 0; i<sz; ++i)
-        {
-            pcb_t *p = deadline_sorted[i];
-            if (p->status == __deadline_default)
-                break;
-
-            switch (p->status)
-            {
-            case DONE:
-            case SEMA_WAIT:
-                continue;
-            case NEW:
-            case RUNNING:
-                RETURN(p);
-            case TIME_WAIT:
-                msecs_t wakeup = kernel.current->time_info.wakeup_time;
-                if (wakeup > time_msecs())
-                    busy_sleep(wakeup - time_msecs());
-                return kernel.current;
-            default:
-                pk_panic("Unhandled process status in scheduler.");
-            }
-        }
-    }
-
-   
-
-    for (size_t i = (offset + 1) % sz; i != offset; i = ((i + 1) % sz))
-    {
-        pcb_t *p = (pcb_t *)list_at(&kernel.plist, i);
-        switch (p->status)
-        {
-        case DONE:
-        case SEMA_WAIT:
-            break;
-        case NEW:
-        case RUNNING:
-            output = p;
-            goto _ret;
-        case TIME_WAIT:
-            maybes[maybe_idx++] = p;
-        default:
-            break;
-        }
-    }
-
-    pcb_t *wait_for = NULL;
-    size_t wakeup = __INT32_MAX__;
+    struct pair *t_scores = malloc(sizeof(struct pair) * sz);
+    struct pair *pick = t_scores;
     for (size_t i = 0; i < sz; ++i)
     {
-        pcb_t *p = maybes[i];
-        if (p != NULL)
-        {
-            switch (p->status)
-            {
-            case TIME_WAIT:
-                if (p->time_info.wakeup_time < wakeup)
-                {
-                    wait_for = p;
-                    wakeup = p->time_info.wakeup_time;
-                }
-                break;
+        struct pair *p = t_scores+i;
+        p->p = (pcb_t *)list_at(&kernel.plist, i);
+        p->t_score = calc_t_score(p->p);
 
-            default:
-                pk_assert(false, "Unreachable case in switch");
-                break;
-            }
-        }
+        if (p->t_score < pick->t_score)
+            pick = p;
     }
 
-    if (wait_for != NULL)
+    asm volatile ("" : : : "memory");
+    char s[128];
+    sprintf(s, "Moew %e\n", pick->t_score);
+
+    //for (size_t i = 0; i < sz - 1; ++i)
+    //for (size_t j = 0; j < sz - i - 1; ++j)
+    //if (t_scores[j].t_score > t_scores[j+1].t_score)
+    //    swap(t_scores+j, t_scores+j+1);
+    pcb_t *out;
+
+    switch (pick->p->status)
     {
-        if (wakeup > time_msecs())
-            busy_sleep(wakeup - time_msecs());
-
-        output = wait_for;
-        goto _ret;
+    case DONE:
+    case SEMA_WAIT:
+        out = &kernel.main_proc;
+        break;
+    case TIME_WAIT:
+        if (pick->p->time_info.wakeup_time > time_msecs())
+            busy_sleep(pick->p->time_info.wakeup_time - time_msecs());
+        out = pick->p;
+        break;
+    case NEW:
+    case RUNNING:
+        out = pick->p;
+        break;
+    default:
+        pk_panic("Unhandled process status in scheduler.");
     }
 
-    return &kernel.main_proc;
-_ret:
-    free(maybes);
-    free(deadline_sorted);
-    return output;
+    dbg_location;
+    free(t_scores);
+    return out;
 }
 
 void pk_cleanup(void)

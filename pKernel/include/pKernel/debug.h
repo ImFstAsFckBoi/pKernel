@@ -15,7 +15,8 @@ asm(".GLOBAL get_esp        \n"
     ".GLOBAL get_sp         \n"
     ".GLOBAL print_stack    \n"
     ".GLOBAL stack_top      \n"
-    ".GLOBAL where_is_stack \n");
+    ".GLOBAL where_is_stack \n"
+    ".GLOBAL print_memory_layout \n");
 
 
 DWORD *get_esp();

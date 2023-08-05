@@ -11,6 +11,9 @@ extern "C" {
 #define NO_DCE __attribute__((used))
 #define NO_RET __attribute__((noreturn))
 
+#define KiB(x) (x) * 1024
+#define MiB(x) (x) * KiB(1024)
+#define GiB(x) (x) * MiB(1024)
 
 typedef unsigned long long  QWORD;
 typedef unsigned long       DWORD;

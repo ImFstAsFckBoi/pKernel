@@ -10,8 +10,14 @@
 extern "C" {
 #endif
 
-#define STACK_SIZE 2048             // Max size of heap allocated stack for processes
-#define KERNEL_STACK_SIZE 128       // Size of "preallocated" kernel stack
+// https://en.na4.teamsupport.com/knowledgeBase/16977436
+// Stack needs to be sufficiently large to allow use of 
+// functions like printf which uses circa 2k bytes on stack
+// to small stack will lead to bugs crazy bugs
+// seems to be a sane minimum
+#define STACK_SIZE KiB(4)           // Max size of heap allocated stack for processes
+#define KERNEL_STACK_SIZE KiB(4)    // Size of "preallocated" kernel stack
+#define T_SCORE_MAX __FLT64_MAX__
 
 typedef struct sema sema;
 

@@ -1,5 +1,5 @@
 CC          = gcc
-CFLAGS      = -Wall -Wextra -pedantic -g -no-pie -m32 -Iinclude/pKernel
+CFLAGS      = -O0 -Wall -Wextra -pedantic -g -no-pie -m32 -Iinclude/pKernel
 COBJFLAGS   = $(CFLAGS) -c
 
 AS          = nasm

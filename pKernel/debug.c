@@ -84,3 +84,50 @@ char *where_is_stack()
 
     return "None";
 }
+
+void print_memory_layout()
+{
+    #define sz kernel.plist.size
+   
+    typedef struct {
+        DWORD addr;
+        pcb_t *owner;
+    } pair;
+    
+    pair *addr_list = malloc(sizeof(pair) * (sz + 1) * 2);
+    size_t idx = 0;
+    addr_list[idx++] = (pair){0xFFFFFFFF, &kernel.main_proc};
+    addr_list[idx++] = (pair){kernel.main_proc.cpu_state.SP.b32, &kernel.main_proc};
+
+    for (size_t i = 0; i < sz; ++i)
+    {
+        pcb_t *p = (pcb_t *)list_at(&kernel.plist, i);
+        if (p == kernel.current)
+        {
+            addr_list[idx++] = (pair){(DWORD)p->stack, p};
+            addr_list[idx++] = (pair){get_esp(), p};
+        }
+        else
+        {
+            addr_list[idx++] = (pair){(DWORD)p->stack, p};
+            addr_list[idx++] = (pair){p->cpu_state.SP.b32, p};
+        }
+    }
+
+    for (size_t i = 0; i < idx - 1; ++i)
+    for (size_t j = 0; j < idx - i - 1; ++j)
+    if (addr_list[j].addr > addr_list[j+1].addr)
+    {
+        pair temp = addr_list[j];
+        addr_list[j] = addr_list[j + 1];
+        addr_list[j + 1] = temp;
+    }
+
+    for (size_t i = 0; i < idx; ++i)
+    {
+        pair *p = addr_list + i;
+        printf("0x%x: %s\n...\n", p->addr, p->owner->name);
+    }
+
+    free(addr_list);
+}

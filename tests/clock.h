@@ -10,7 +10,7 @@ int clock_test_s()
         printf("\n\nTime since start: %lu s", time_secs() - start);
         puts("\0338");
         fflush(stdout);
-        pk_yield();
+        pk_sleep(1000);
     }
 
     return 0;
@@ -24,7 +24,7 @@ int clock_test_ms()
         printf("\nTime since start: %lu ms\r", time_msecs() - start);
         puts("\0338");
         fflush(stdout);
-        pk_yield();
+        pk_sleep(1);
     }
 
     return 0;
@@ -45,8 +45,8 @@ int clock_test_us()
 
 void test_clock()
 {
-    puts("\0337");
-    time_init(3700);
+    //puts("\0337");
+    time_init(4500);
 
     pk_add_proc(clock_test_s, "Clock s", NULLARG);
     pk_add_proc(clock_test_ms, "Clock ms", NULLARG);

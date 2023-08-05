@@ -10,7 +10,7 @@ extern pKernel kernel;
 #define STATIC_SIZE_PRINT(type) char(*__kaboom)[sizeof(type)] = 1;
 
 #define OVERRIDE_ENABLE 1
-#define OVERRIDE_VALUE 1
+#define OVERRIDE_VALUE 0
 
 #ifndef DO_DEBUG
 // ENABLE / DISABLE DEBUGGING
