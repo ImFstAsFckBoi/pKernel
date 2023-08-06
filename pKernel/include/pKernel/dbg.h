@@ -10,7 +10,7 @@ extern pKernel kernel;
 #define STATIC_SIZE_PRINT(type) char(*__kaboom)[sizeof(type)] = 1;
 
 #define OVERRIDE_ENABLE 1
-#define OVERRIDE_VALUE 0
+#define OVERRIDE_VALUE 1
 
 #ifndef DO_DEBUG
 // ENABLE / DISABLE DEBUGGING
@@ -24,15 +24,15 @@ extern pKernel kernel;
 
 
 #if DO_DEBUG 
-#define dbg_location printf("[DEBUG] [%s:%d] (%s)\n", __FILE__, __LINE__, NAME)
+#define dbg_location fprintf(stderr, "[DEBUG] [%s:%d] (%s)\n", __FILE__, __LINE__, NAME)
 
-#define dbg_print(format) printf("[DEBUG] [%s:%d] (%s) "format, __FILE__, __LINE__, NAME)
-#define dbg_printf(format, ...) printf("[DEBUG] [%s:%d] (%s) "format, __FILE__, __LINE__, NAME, __VA_ARGS__)
-#define dbg_dump(fmt, x)   printf("[DEBUG] [%s:%d] (%s) Variable %s = "fmt"\n", __FILE__, __LINE__, NAME, #x, x)
-#define dbg_dump_i(x)   printf("[DEBUG] [%s:%d] (%s) Variable %s = %d\n", __FILE__, __LINE__, NAME, #x, x)
-#define dbg_dump_f(x)   printf("[DEBUG] [%s:%d] (%s) Variable %s = %f\n", __FILE__, __LINE__, NAME, #x, x)
-#define dbg_dump_str(x) printf("[DEBUG] [%s:%d] (%s) Variable %s = %s\n", __FILE__, __LINE__, NAME, #x, x)
-#define dbg_dump_ptr(x) printf("[DEBUG] [%s:%d] (%s) Variable %s = %p\n", __FILE__, __LINE__, NAME, #x, x)
+#define dbg_print(format) fprintf(stderr, "[DEBUG] [%s:%d] (%s) "format, __FILE__, __LINE__, NAME)
+#define dbg_printf(format, ...) fprintf(stderr, "[DEBUG] [%s:%d] (%s) "format, __FILE__, __LINE__, NAME, __VA_ARGS__)
+#define dbg_dump(fmt, x)   fprintf(stderr, "[DEBUG] [%s:%d] (%s) Variable %s = "fmt"\n", __FILE__, __LINE__, NAME, #x, x)
+#define dbg_dump_i(x)   fprintf(stderr, "[DEBUG] [%s:%d] (%s) Variable %s = %d\n", __FILE__, __LINE__, NAME, #x, x)
+#define dbg_dump_f(x)   fprintf(stderr, "[DEBUG] [%s:%d] (%s) Variable %s = %f\n", __FILE__, __LINE__, NAME, #x, x)
+#define dbg_dump_str(x) fprintf(stderr, "[DEBUG] [%s:%d] (%s) Variable %s = %s\n", __FILE__, __LINE__, NAME, #x, x)
+#define dbg_dump_ptr(x) fprintf(stderr, "[DEBUG] [%s:%d] (%s) Variable %s = %p\n", __FILE__, __LINE__, NAME, #x, x)
 
 #else
 

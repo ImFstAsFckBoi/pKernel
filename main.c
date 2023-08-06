@@ -6,6 +6,7 @@
 
 int main()
 {
+
     time_init(4500);
     pk_init(NULL);
     test_clock();

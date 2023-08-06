@@ -11,16 +11,20 @@
 
 
 pKernel kernel;
-
+const QWORD CANARY_MAGIC_NUMBER = 0x01030307;
 
 pcb_t *pk_add_proc(proc_func_t entry_func, char *name, arg_t args)
 {
     register pcb_t *p = malloc(sizeof(pcb_t));
+    p->canary = CANARY_MAGIC_NUMBER;
     BYTE *stack = malloc(STACK_SIZE);
     p->cpu_state.SP.b32 = (DWORD)stack + STACK_SIZE;
     p->stack = stack + STACK_SIZE;
 
     p->name = pk_stack_cpy(p, name, strlen(name) + 1);
+
+    // Write stack canary at end of stack
+    *(QWORD *)stack = CANARY_MAGIC_NUMBER;
 
     // Load argv data into top of stack
     for (int i = 0; i < args.argc; ++i)
@@ -50,6 +54,7 @@ pcb_t *pk_add_proc(proc_func_t entry_func, char *name, arg_t args)
     list_push_back(&kernel.plist, (DWORD)p);
     p->time_info.deadline = __deadline_default;
     p->time_info.wakeup_time = 0;
+    pk_assert(pk_verify_stack_canary(p), "Something when wrong then creating process.");
     return p;
 }
 
@@ -88,6 +93,25 @@ BYTE *pk_stack_push (pcb_t *proc, BYTE value)
     return (BYTE *)proc->cpu_state.SP.b32;
 }
 
+bool pk_verify_stack_canary(pcb_t *proc)
+{
+    return *((QWORD *)(proc->stack - STACK_SIZE)) == CANARY_MAGIC_NUMBER;
+}
+
+bool pk_verify_pcb_canary(pcb_t *proc)
+{
+    return proc->canary == CANARY_MAGIC_NUMBER;
+}
+
+bool pk_verify_process_integrity(pcb_t *proc)
+{
+    bool stack = pk_verify_stack_canary(proc);
+    bool pcb = pk_verify_pcb_canary(proc);
+
+    bool k_rel = (DWORD)proc->stack < kernel.main_proc.cpu_state.SP.b32;
+
+    return stack && pcb && k_rel;
+}
 
 void pk_init(pcb_t *(*scheduler)(void))
 {
@@ -116,7 +140,7 @@ void pk_run(void)
 
 double calc_t_score(pcb_t *p)
 {
-    double x = p->time_info.cpu_time * (p->time_info.deadline / __deadline_default) * (1 + (p == kernel.current));
+    double x = p->time_info.cpu_time * (p->time_info.deadline / __deadline_default);
 
     switch (p->status)
     {
@@ -124,7 +148,8 @@ double calc_t_score(pcb_t *p)
     case SEMA_WAIT:
         return T_SCORE_MAX;
     case TIME_WAIT:
-        x += (int)p->time_info.wakeup_time - (int)time_msecs();
+        if (kernel.current->time_info.wakeup_time > time_msecs())
+            return T_SCORE_MAX - 1;
     case NEW:
     case RUNNING:
         break;
@@ -137,7 +162,8 @@ double calc_t_score(pcb_t *p)
 
 pcb_t *pk_default_next_proc(void)
 {
-    dbg_location;
+    pcb_t *out = NULL;
+    // busy_sleep(500);
     const size_t sz = kernel.plist.size;
     if (kernel.current == &kernel.main_proc)
         return (pcb_t *) list_at(&kernel.plist, 0);
@@ -154,14 +180,16 @@ pcb_t *pk_default_next_proc(void)
         case TIME_WAIT:
         {
             if (kernel.current->time_info.wakeup_time > time_msecs())
+            {
+                kernel.current->time_info.cpu_time += kernel.current->time_info.wakeup_time - time_msecs();
                 busy_sleep(kernel.current->time_info.wakeup_time - time_msecs());
+            }
             return kernel.current;
         }
         default:
             pk_panic("Unhandled process status in scheduler.");
         }
     }
-
 
     struct pair {
         double t_score;
@@ -180,15 +208,27 @@ pcb_t *pk_default_next_proc(void)
             pick = p;
     }
 
-    asm volatile ("" : : : "memory");
-    char s[128];
-    sprintf(s, "Moew %e\n", pick->t_score);
+    pk_assert(pk_verify_process_integrity(kernel.current), "Process corrupted!");
+    dbg_printf("%f", pick->t_score);
+    pk_assert(pk_verify_process_integrity(kernel.current), "Process corrupted!");
+
+    // Pick is TIME_WAIT pick one with least waiting time.
+    if (pick->t_score == T_SCORE_MAX - 1)
+    {
+        dbg_print("Pick one for wait\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        for (size_t i = 0; i < sz; ++i)
+        {
+            struct pair *p = t_scores+i;
+            if (p->p->time_info.wakeup_time < pick->p->time_info.wakeup_time)
+                pick = p;
+        }
+    }
 
     //for (size_t i = 0; i < sz - 1; ++i)
     //for (size_t j = 0; j < sz - i - 1; ++j)
     //if (t_scores[j].t_score > t_scores[j+1].t_score)
     //    swap(t_scores+j, t_scores+j+1);
-    pcb_t *out;
+
 
     switch (pick->p->status)
     {
@@ -198,7 +238,12 @@ pcb_t *pk_default_next_proc(void)
         break;
     case TIME_WAIT:
         if (pick->p->time_info.wakeup_time > time_msecs())
-            busy_sleep(pick->p->time_info.wakeup_time - time_msecs());
+        {
+            msecs_t t = pick->p->time_info.wakeup_time - time_msecs();
+            dbg_printf("Sleeping for %ld ms\n", t);
+            pick->p->time_info.cpu_time += t;
+            busy_sleep(t);
+        }
         out = pick->p;
         break;
     case NEW:
@@ -209,7 +254,6 @@ pcb_t *pk_default_next_proc(void)
         pk_panic("Unhandled process status in scheduler.");
     }
 
-    dbg_location;
     free(t_scores);
     return out;
 }
@@ -246,10 +290,17 @@ void pk_cleanup(void)
     {
         register pcb_t *p = ((pcb_t *)list_at(&kernel.plist, i));
 
-        sema_destroy(&p->com_info.done_signal);
-        list_destroy(&p->subprocesses);
-        free(p->stack - STACK_SIZE);
-        free(p);
+        if (pk_verify_process_integrity(p))
+        {
+            sema_destroy(&p->com_info.done_signal);
+            list_destroy(&p->subprocesses);
+            free(p->stack - STACK_SIZE);
+            free(p);
+        }
+        else
+        {
+            printf("Process with index %d has been corrupted! Skipping cleanup.\n", i);
+        }
     }
 
     list_destroy(&list);

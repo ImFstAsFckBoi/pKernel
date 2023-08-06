@@ -15,7 +15,7 @@ void *memcpy_rev(void *dest, void *src, size_t len)
 
 void pk_panic(const char *msg)
 {
-    printf("KERNEL PANIC! with message:\n%s\n\nExiting pKernel and continuing main function", msg);
+    printf("KERNEL PANIC! with message:\n%s\n\nExiting pKernel and continuing main function\n", msg);
     pk_ctx_switch(&kernel.main_proc);
 }
 
@@ -25,7 +25,7 @@ void pk_assert(bool cond, char *msg)
         return;
     
     if (msg != NULL)
-        printf("Assertion failed: %s\n", msg);
+        printf("\nAssertion failed: %s\n", msg);
 
     pk_panic("Failed assertion.");
 }

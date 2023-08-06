@@ -88,7 +88,7 @@ char *where_is_stack()
 void print_memory_layout()
 {
     #define sz kernel.plist.size
-   
+
     typedef struct {
         DWORD addr;
         pcb_t *owner;
@@ -105,7 +105,7 @@ void print_memory_layout()
         if (p == kernel.current)
         {
             addr_list[idx++] = (pair){(DWORD)p->stack, p};
-            addr_list[idx++] = (pair){get_esp(), p};
+            addr_list[idx++] = (pair){(DWORD)get_esp(), p};
         }
         else
         {
@@ -126,7 +126,7 @@ void print_memory_layout()
     for (size_t i = 0; i < idx; ++i)
     {
         pair *p = addr_list + i;
-        printf("0x%x: %s\n...\n", p->addr, p->owner->name);
+        printf("0x%lx: %s\n...\n", p->addr, p->owner->name);
     }
 
     free(addr_list);

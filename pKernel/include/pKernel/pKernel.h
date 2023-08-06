@@ -15,7 +15,7 @@ extern "C" {
 // functions like printf which uses circa 2k bytes on stack
 // to small stack will lead to bugs crazy bugs
 // seems to be a sane minimum
-#define STACK_SIZE KiB(4)           // Max size of heap allocated stack for processes
+#define STACK_SIZE 2400           // Max size of heap allocated stack for processes
 #define KERNEL_STACK_SIZE KiB(4)    // Size of "preallocated" kernel stack
 #define T_SCORE_MAX __FLT64_MAX__
 
@@ -72,8 +72,33 @@ WORD *pk_stack_pushw (pcb_t *proc, WORD  value);
  */
 BYTE *pk_stack_push (pcb_t *proc, BYTE  value);
 /**
- * @brief Initialize kernel
+ * @brief Verify that the stack canary has not been overwritten.
  * 
+ * @param proc Process stack to check
+ * @return true = Canary is intact.
+ * @return false = Canary has been overwritten.
+ */
+bool pk_verify_stack_canary(pcb_t *proc);
+/**
+ * @brief Verify that the PCB canary has not been overwritten.
+ * 
+ * @param proc Process stack to check
+ * @return true = Canary is intact.
+ * @return false = Canary has been overwritten.
+ */
+bool pk_verify_pcb_canary(pcb_t *proc);
+/**
+ * @brief Verify that all info about the process is reasonable and correct.
+ * Checks, among other thing, stack and PCB canary.
+ * 
+ * @param proc Process stack to check.
+ * @return true = Process is intact.
+ * @return false = Some process data has been corrupted.
+ */
+bool pk_verify_process_integrity(pcb_t *proc);
+/**
+ * @brief Initialize kernel
+ *
  * @param scheduler function that returns next process (pcb_t *) to run,
  * NULL uses default. Scheduler must:
  *  (1) Only return kernel process once all processes are DONE.

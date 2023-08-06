@@ -57,6 +57,7 @@ typedef struct pcb_t
     pk_list subprocesses;
     com_info_t com_info;
     time_info_t time_info;
+    QWORD canary;
 } pcb_t;
 
 /**
