@@ -48,8 +48,8 @@ DWORD list_pop_front(pk_list *l)
 {
     register DWORD tmp = l->data[0];
     memmove(l->data,
-              l->data + 1,
-              l->size * sizeof(DWORD));
+            l->data + 1,
+            l->size * sizeof(DWORD));
     l->data[--l->size] = 0;
     return tmp;
 }
@@ -58,8 +58,8 @@ DWORD list_remove(pk_list *l, size_t pos)
 {
     register DWORD tmp = l->data[pos];
     memmove(l->data + pos,
-              l->data + pos + 1,
-              (l->size - pos - 1) * sizeof(DWORD));
+            l->data + pos + 1,
+            (l->size - pos - 1) * sizeof(DWORD));
     --l->size;
     return tmp;
 }

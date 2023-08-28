@@ -112,7 +112,15 @@ void pk_cleanup(void);
  *
  */
 NO_RET void pk_exit_handler(void);
-
+/**
+ * @brief Assert a condition,
+ * cause a kernel panic and exit
+ * if the condition is false
+ * 
+ * @param cond Condition to check for, panic is false
+ * @param msg Message to print if assert failed.
+ */
+void pk_assert(bool cond, char *msg);
 #ifdef __cplusplus
 }
 #endif

@@ -13,23 +13,58 @@ void *memcpy_rev(void *dest, void *src, size_t len)
     return dest;
 }
 
-void pk_assert(bool cond, char *msg)
+void xorswap(BYTE *a, BYTE *b)
 {
-    if (cond)
-        return;
-    
-    if (msg != NULL)
-        printf("Assertion failed: %s\n Exiting pKernel and continuing main function\n", msg);
-
-    pk_ctx_switch(&kernel.main_proc);
+    *a = *a ^ *b;
+    *b = *b ^ *a;
+    *a = *a ^ *b;
 }
 
-void swap(void *a, void *b)
+void swap(BYTE *a, BYTE *b)
 {
-    //X := X XOR Y; // XOR the values and store the result in X
-    //Y := Y XOR X; // XOR the values and store the result in Y
-    //X := X XOR Y; // XOR the values and store the result in X
-    DWORD tmp = *(DWORD *)a;
-    *(DWORD *)a = *(DWORD *)b;
-    *(DWORD *)b = tmp;
+    BYTE tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+void xorswapw(WORD *a, WORD *b)
+{
+    *a = *a ^ *b;
+    *b = *b ^ *a;
+    *a = *a ^ *b;
+}
+
+void swapw(WORD *a, WORD *b)
+{
+    WORD tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+void xorswapl(DWORD *a, DWORD *b)
+{
+    *a = *a ^ *b;
+    *b = *b ^ *a;
+    *a = *a ^ *b;
+}
+
+void swapl(DWORD *a, DWORD *b)
+{
+    DWORD tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+void xorswapq(QWORD *a, QWORD *b)
+{
+    *a = *a ^ *b;
+    *b = *b ^ *a;
+    *a = *a ^ *b;
+}
+
+void swapq(QWORD *a, QWORD *b)
+{
+    QWORD tmp = *a;
+    *a = *b;
+    *b = tmp;
 }

@@ -132,7 +132,7 @@ pcb_t *pk_default_next_proc(void)
     for (size_t i = 0; i < sz - 1; ++i)
     for (size_t j = 0; j < sz - i - 1; ++j)   
     if (ordered[j]->time_info.deadline > ordered[j + 1]->time_info.deadline)
-        swap(ordered+j, ordered+j+1);
+        swapl((DWORD *)(ordered+j), (DWORD *)(ordered+j+1));
 
     pcb_t **maybes = malloc(sizeof(pcb_t *) * sz);
     memset(maybes, (int) NULL, sizeof(pcb_t *) * sz);
@@ -268,4 +268,15 @@ NO_RET void pk_exit_handler(void)
     sema_up(&p->com_info.done_signal);
     pk_ctx_switch(kernel.scheduler());
     __builtin_unreachable();
+}
+
+void pk_assert(bool cond, char *msg)
+{
+    if (cond)
+        return;
+    
+    if (msg != NULL)
+        printf("Assertion failed: %s\n Exiting pKernel and continuing main function\n", msg);
+
+    pk_ctx_switch(&kernel.main_proc);
 }

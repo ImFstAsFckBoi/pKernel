@@ -12,7 +12,14 @@
         "Raynal",
         "rdtsc",
         "rwlock",
-        "sema"
+        "sema",
+        "swapl",
+        "swapq",
+        "swapw",
+        "xorswap",
+        "xorswapl",
+        "xorswapq",
+        "xorswapw"
     ],
     "files.associations": {
         "*.txt": "txt",
@@ -49,6 +56,7 @@
         "syscall.h": "c",
         "math.h": "c",
         "stdlib.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "random": "c"
     }
 }
