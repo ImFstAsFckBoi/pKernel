@@ -1,7 +1,7 @@
 # pKernel
-A coroutine library that only depends on glibc. Might become an actual kernel for an embedded system in the future.
+A coroutine library that only depends on glibc (except some Linux specific debug functions). Might become an actual kernel for an embedded system in the future (but probably never).
 
-Only works on 32 bit x86 right now. Goal is to be 64 bit, and maybe ARM, compatible at some point.
+Only works on 32 bit x86 right now. Goal is to be 64 bit.
 
 ## Build
 ```
